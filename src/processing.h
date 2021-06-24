@@ -9,8 +9,8 @@
 #include "instruction_set.h"
 #include "utils.h"
 
-#define MAX_PROCESSES 10
-#define MAX_NAME_SIZE 12
+#define PROCESS_MAX_AMOUNT 10
+#define PROCESS_NAME_SIZE 12
 
 class Processing {
 
@@ -22,80 +22,84 @@ class Processing {
     PAUSED = 'p',
   };
 
-  struct Process {
-    int pid;
-    char name[MAX_NAME_SIZE];
-    ProcessState state;
+  typedef PROGMEM struct {
+    int pid_;
+    char name_[PROCESS_NAME_SIZE];
+    ProcessState state_;
     uint8_t addr;
-    uint8_t program_ctr;
-    uint8_t file_ptr;
-    int loop_addr;
-//    Stack* stack;
-    Stack::stack_t stack;
-  };
+    uint8_t program_ctr_;
+    uint8_t file_ptr_;
+    int loop_addr_;
+    Stack* stack_;
+//    Stack::stack_t stack;
+  } Process;
 
-  Process process_table_[MAX_PROCESSES]{};
+  Process process_table_[PROCESS_MAX_AMOUNT] = { 0 };
+  int num_of_processes_ = 0;
 
  public:
   Processing();
   ~Processing();
 
+  void Reset();
+
   /**
    * @brief Automatically checks stored processes
    *        and start or stop them based on their state
    */
-  void Service();
+  int Service();
 
   /**
    * @brief Creates a new process and automatically runs it
    * @param name
-   * @return
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  bool StartProcess(char* name);
+  int CreateProcess(char* name);
 
   /**
    * @brief Changes process's state
    * @param id
    * @param state
-   * @return true if successful, false if not
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  bool EditProcess(int id, ProcessState state);
+  int EditProcess(uint8_t id, ProcessState state);
 
   /**
    * @brief Prints a list of all stored processes
+   * @return 0 (error-code: OK)
    */
-  void ListProcesses();
+  int ListProcesses();
 
  private:
-  int num_of_processes_ = 0;
-
   /**
    * @brief Executes a process
    * @param index
-   * @return True if successfully executed, false if not
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  bool Execute(int index);
+  int Execute(uint8_t index);
 
   /**
    * @brief Checks whether a process exists
    * @param id
    * @return process pid
    */
-  int FindProcess(int id);
+  int FindProcess(uint8_t id);
 
   /**
    * @brief Removes a process
    * @param id
+   * @return 0 (error-code: OK)
    */
-  void KillProcess(int id);
+  int KillProcess(uint8_t id);
 
   /**
    * @brief Sets a new state for a process
    * @param pid
    * @param new_state
-   * @return true if successful, false if not
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  bool SetProcessState(int pid, ProcessState new_state);
+  int SetProcessState(int pid, ProcessState new_state);
+
 
 };
 

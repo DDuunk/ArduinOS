@@ -1,55 +1,143 @@
 #include "processing.h"
 #include "operation.h"
 
-Memory* memory;
+static Memory memory;
 
 Processing::Processing() {
-  memory = new Memory();
+  Reset();
+}
+
+Processing::~Processing() {}
+
+void Processing::Reset() {
+  memset(process_table_, '\0', sizeof(process_table_));
   num_of_processes_ = 0;
 }
 
-Processing::~Processing() {
-//  num_of_processes_ = 0;
-}
-
-void Processing::Service() {
+int Processing::Service() {
   int num_of_running_processes = 0;
 
-  for (int i = 0; i < MAX_PROCESSES; i++) {
-    if (process_table_[i].state ==  RUNNING) {
+  for (uint8_t i = 0; i < PROCESS_MAX_AMOUNT; i++) {
+    if (process_table_[i].state_ == RUNNING) {
       num_of_running_processes++;
     }
 
-    if (process_table_[i].state == TERMINATED) {
+    if (process_table_[i].state_ == TERMINATED) {
       KillProcess(i);
       break;
     }
   }
 
   if (num_of_running_processes == 0) {
-    return;
+    return -1;
   }
 
   uint32_t start_time = 0;
   uint32_t run_time = ceil(50 / num_of_running_processes);
 
-  for (int i = 0; i < MAX_PROCESSES; i++) {
+  for (uint8_t i = 0; i < PROCESS_MAX_AMOUNT; i++) {
     start_time = millis();
 
-    while (process_table_[i].state == RUNNING && (millis() - start_time < run_time)) {
-      if (Execute(i)) {
+    while (process_table_[i].state_ == RUNNING && (millis() - start_time < run_time)) {
+      if (Execute(i) == 0) {
         i--;
         break;
       }
     }
   }
+
+  return 0;
 }
 
-bool Processing::Execute(int index) {
-  uint8_t next_instruction = EEPROM[process_table_[index].program_ctr++];
+int Processing::CreateProcess(char* name) {
+  if (num_of_processes_ >= PROCESS_MAX_AMOUNT) {
+    // @todo panic
+    return -1;
+  }
 
-  Serial.print("NEXT ");
-  Serial.println(next_instruction);
+  int file_index = Fat::FindFile(name);
+  if (file_index == -1) {
+    // @todo panic
+    return -1;
+  }
+
+  int pid = 0;
+  for (int i = 0; i < PROCESS_MAX_AMOUNT; i++) {
+    if (process_table_[i].state_ == DEAD) {
+      pid = i;
+      break;
+    }
+  }
+
+  Process process;
+  process.pid_ = pid;
+  process.state_ = RUNNING;
+  process.stack_ = new Stack();
+  process.file_ptr_ = 0;
+  process.program_ctr_ = Fat::GetStartAddr(file_index);
+  process.loop_addr_ = 0;
+  strcpy_P(process.name_, name);
+
+//  Serial.println(process.pid);
+//  Serial.println(process.state);
+//  Serial.println(process.file_ptr);
+//  Serial.println(process.program_ctr);
+//  Serial.println(process.name);
+
+  process_table_[pid] = process;
+  num_of_processes_++;
+
+  Serial.print(F("[Processing] Started: "));
+  Serial.println(process.name_);
+
+//  ListProcesses();
+  return 0;
+}
+
+int Processing::EditProcess(uint8_t id, ProcessState state) {
+  int pid = FindProcess(id);
+  if (pid == -1) {
+    ThrowError((char*) "Processing", (char*) "Process does not exist");
+    return -1;
+  }
+
+  if (!SetProcessState(pid, state)) {
+//    ThrowError((char*) "Processing", (char*) "Process ", false);
+//    Serial.print(pid);
+//    Serial.print(F(" already has state "));
+//    Serial.println(state);
+    return -1;
+  }
+
+  return 0;
+}
+
+int Processing::KillProcess(uint8_t id) {
+  // Debatable to just remove the entire process instead of killing it
+  Process process = process_table_[id];
+
+  memset(process.name_, '\0', sizeof(process.name_));
+  process.pid_ = 0;
+  process.state_ = DEAD;
+  process.program_ctr_ = '\0';
+  process.file_ptr_ = '\0';
+  process.stack_ = new Stack();
+//  process.stack_ = {};
+  process.addr = '\0';
+
+  process_table_[id] = process;
+  num_of_processes_--;
+
+  Serial.print(F("[Processing] Process "));
+  Serial.print(id);
+  Serial.println(F(" successfully terminated"));
+  return 0;
+}
+
+int Processing::Execute(uint8_t index) {
+  uint8_t next_instruction = EEPROM[process_table_[index].program_ctr_++];
+
+//  Serial.println(next_instruction);
 
   switch (next_instruction) {
     case CHAR:
@@ -59,17 +147,17 @@ bool Processing::Execute(int index) {
       Operation::StackOp(process_table_ + index, next_instruction);
       break;
     case SET:
-      memory->StoreEntry(
-          EEPROM[process_table_[index].program_ctr++],
-          process_table_[index].pid,
-          &(process_table_[index].stack)
+      memory.StoreEntry(
+          EEPROM[process_table_[index].program_ctr_++],
+          process_table_[index].pid_,
+          process_table_[index].stack_
       );
       break;
     case GET:
-      memory->GetEntry(
-          EEPROM[process_table_[index].program_ctr++],
-          process_table_[index].pid,
-          &(process_table_[index].stack)
+      memory.GetEntry(
+          EEPROM[process_table_[index].program_ctr_++],
+          process_table_[index].pid_,
+          process_table_[index].stack_
       );
       break;
     case INCREMENT:
@@ -155,80 +243,184 @@ bool Processing::Execute(int index) {
       // TODO: Pop type getal, push type getal, PC-- en push x als process x niet TERMINATED is, anders niets
       break;
     case STOP:
-      SetProcessState(process_table_[index].pid, TERMINATED);
-      return true; // Terminate process
+      SetProcessState(process_table_[index].pid_, TERMINATED);
+      return 0; // Terminate process
     default:
       ThrowError((char*) "Processing", (char*) "unknown instruction: ", false);
       Serial.println(next_instruction);
-      SetProcessState(process_table_[index].pid, TERMINATED);
-      return true; // Terminate process
+      SetProcessState(process_table_[index].pid_, TERMINATED);
+      return 0; // Terminate process
   }
 
-  return false;
+  return -1;
 }
 
-bool Processing::StartProcess(char* name) {
-  if (num_of_processes_ >= MAX_PROCESSES) {
-    ThrowError((char*) "Processing", (char*) "Processing table is full");
-    return false;
-  }
+//bool Processing::Execute(int index) {
+//  uint8_t next_instruction = EEPROM[process_table_[index].program_ctr++];
+//
+//  Serial.print("NEXT ");
+//  Serial.println(next_instruction);
+//
+//  switch (next_instruction) {
+//    case CHAR:
+//    case INT:
+//    case STRING:
+//    case FLOAT:
+//      Operation::StackOp(process_table_ + index, next_instruction);
+//      break;
+//    case SET:
+//      memory->StoreEntry(
+//          EEPROM[process_table_[index].program_ctr++],
+//          process_table_[index].pid,
+//          &(process_table_[index].stack)
+//      );
+//      break;
+//    case GET:
+//      memory->GetEntry(
+//          EEPROM[process_table_[index].program_ctr++],
+//          process_table_[index].pid,
+//          &(process_table_[index].stack)
+//      );
+//      break;
+//    case INCREMENT:
+//    case DECREMENT:
+//    case UNARYMINUS:
+//    case ABS:
+//    case SQ:
+//    case SQRT:
+//    case ANALOGREAD:
+//    case DIGITALREAD:
+//    case LOGICALNOT:
+//    case BITWISENOT:
+//    case TOCHAR:
+//    case TOINT:
+//    case TOFLOAT:
+//    case ROUND:
+//    case FLOOR:
+//    case CEIL:
+//      Operation::UnaryOp(process_table_ + index, next_instruction);
+//      break;
+//    case PLUS:
+//    case MINUS:
+//    case TIMES:
+//    case DIVIDEDBY:
+//    case MODULUS:
+//    case EQUALS:
+//    case NOTEQUALS:
+//    case LESSTHAN:
+//    case LESSTHANOREQUALS:
+//    case GREATERTHAN:
+//    case GREATERTHANOREQUALS:
+//    case MIN:
+//    case MAX:
+//    case POW:
+//    case LOGICALAND:
+//    case LOGICALOR:
+//    case LOGICALXOR:
+//    case BITWISEAND:
+//    case BITWISEOR:
+//    case BITWISEXOR:
+//      Operation::BinaryOp(process_table_ + index, next_instruction);
+//      break;
+//    case IF:
+//    case ELSE:
+//    case ENDIF:
+//    case LOOP:
+//    case ENDLOOP:
+//    case WHILE:
+//    case ENDWHILE:
+//      Operation::ConditionalOp(process_table_ + index, next_instruction);
+//      break;
+//    case DELAY:
+//    case DELAYUNTIL:
+//    case MILLIS:
+//      Operation::TimeOp(process_table_ + index, next_instruction);
+//      break;
+//    case CONSTRAIN:
+//    case MAP:
+//    case PINMODE:
+//    case DIGITALWRITE:
+//    case ANALOGWRITE:
+//      Operation::IoOp(process_table_ + index, next_instruction);
+//      break;
+//    case PRINT:
+//      Operation::PrintOp(process_table_ + index);
+//      break;
+//    case PRINTLN:
+//      Operation::PrintOp(process_table_ + index, true);
+//      break;
+//    case OPEN:
+//    case CLOSE:
+//    case WRITE:
+//    case READINT:
+//    case READCHAR:
+//    case READFLOAT:
+//    case READSTRING:
+////      Operation::FileOp(process_table_ + index, next_instruction);
+//      break;
+//    case FORK:
+//      // TODO: Pop type STRING, push type INT, start new process; push process-id
+//      break;
+//    case WAITUNTILDONE:
+//      // TODO: Pop type getal, push type getal, PC-- en push x als process x niet TERMINATED is, anders niets
+//      break;
+//    case STOP:
+//      SetProcessState(process_table_[index].pid, TERMINATED);
+//      return true; // Terminate process
+//    default:
+//      ThrowError((char*) "Processing", (char*) "unknown instruction: ", false);
+//      Serial.println(next_instruction);
+//      SetProcessState(process_table_[index].pid, TERMINATED);
+//      return true; // Terminate process
+//  }
+//
+//  return false;
+//}
 
-  int file_index = Fat::FindFile(name);
-  if (file_index == -1) {
-    ThrowError((char*) "Processing", (char*) "File does not exist");
-    return false;
-  }
+//bool Processing::StartProcess(char* name) {
+//  if (num_of_processes_ >= PROCESS_MAX_AMOUNT) {
+//    ThrowError((char*) "Processing", (char*) "Processing table is full");
+//    return false;
+//  }
+//
+//  int file_index = Fat::FindFile(name);
+//  if (file_index == -1) {
+//    ThrowError((char*) "Processing", (char*) "File does not exist");
+//    return false;
+//  }
+//
+//  int pid;
+//  for (int i = 0; i < PROCESS_MAX_AMOUNT; i++) {
+//    if (process_table_[i].state == '\0') {
+//      pid = i;
+//      break;
+//    }
+//  }
+//
+//  Process process;
+//  process.pid = pid;
+//  process.state = RUNNING;
+////  process.stack = new Stack();
+//  process.stack = {};
+//  process.file_ptr = 0;
+//  process.program_ctr = Fat::GetStartAddr(file_index);
+//  strcpy(process.name, name);
+//
+//  process_table_[pid] = process;
+//  num_of_processes_++;
+//
+//  Serial.print(F("[Processing] Started: "));
+//  Serial.println(process.name);
+////  Serial.println(name);
+//  ListProcesses();
+//  return true;
+//}
 
-  int pid;
-  for (int i = 0; i < MAX_PROCESSES; i++) {
-    if (process_table_[i].state == '\0') {
-      pid = i;
-      break;
-    }
-  }
-
-  Process process;
-  process.pid = pid;
-  process.state = RUNNING;
-//  process.stack = new Stack();
-  process.stack = {};
-  process.file_ptr = 0;
-  process.program_ctr = Fat::GetStartAddr(file_index);
-  strcpy(process.name, name);
-
-  process_table_[pid] = process;
-  num_of_processes_++;
-
-  Serial.print(F("[Processing] Started: "));
-  Serial.println(process.name);
-//  Serial.println(name);
-  ListProcesses();
-  return true;
-}
-
-bool Processing::EditProcess(int id, ProcessState state) {
-  int pid = FindProcess(id);
-  if (pid == -1) {
-    ThrowError((char*) "Processing", (char*) "Process does not exist");
-    return false;
-  }
-
-  if (!SetProcessState(pid, state)) {
-    ThrowError((char*) "Processing", (char*) "Process", false);
-    Serial.print(pid);
-    Serial.print(F(" already has state "));
-    Serial.println(state);
-    return false;
-  }
-
-  return true;
-}
-
-int Processing::FindProcess(int id) {
-  for (uint8_t i = 0; i < MAX_PROCESSES; i++) {
+int Processing::FindProcess(uint8_t id) {
+  for (int i = 0; i < PROCESS_MAX_AMOUNT; i++) {
     Process process = process_table_[i];
 
-    if (process.pid == id && process.state != '\0') {
+    if (process.pid_ == id && process.state_ != DEAD) {
       return i;
     }
   }
@@ -236,34 +428,14 @@ int Processing::FindProcess(int id) {
   return -1;
 }
 
-void Processing::KillProcess(int id) {
-  Process process = process_table_[id];
-
-  strcpy(process.name, nullptr);
-  process.pid = 0;
-  process.state = DEAD;
-  process.program_ctr = '\0';
-  process.file_ptr = '\0';
-//  process.stack = new Stack();
-  process.stack = {};
-  process.addr = '\0';
-
-  process_table_[id] = process;
-  num_of_processes_--;
-
-  Serial.print(F("[Processing] Process "));
-  Serial.print(id);
-  Serial.println(F(" successfully terminated"));
-}
-
-bool Processing::SetProcessState(int pid, ProcessState new_state) {
+int Processing::SetProcessState(int pid, ProcessState new_state) {
   Process process = process_table_[pid];
 
-  if (process.state == new_state) {
-    return false;
+  if (process.state_ == new_state) {
+    return -1;
   }
 
-  process.state = new_state;
+  process.state_ = new_state;
   process_table_[pid] = process;
 
   Serial.print(F("[Processing] PID "));
@@ -271,17 +443,17 @@ bool Processing::SetProcessState(int pid, ProcessState new_state) {
   Serial.print(F(" state changed to: "));
 
   // Can't get key from value for enums so this garbage is needed...
-  switch (process.state) {
-    case '\0':
+  switch (process.state_) {
+    case DEAD:
       Serial.println(F("DEAD"));
       break;
-    case 't':
+    case TERMINATED:
       Serial.println(F("TERMINATED"));
       break;
-    case 'r':
+    case RUNNING:
       Serial.println(F("RUNNING"));
       break;
-    case 'p':
+    case PAUSED:
       Serial.println(F("PAUSED"));
       break;
     default:
@@ -289,25 +461,26 @@ bool Processing::SetProcessState(int pid, ProcessState new_state) {
       break;
   }
 
-  return true;
+  return 0;
 }
 
-void Processing::ListProcesses() {
+int Processing::ListProcesses() {
   Serial.println(F("PID\tSTATE\tADDR\tPC\tFP\tLA\tNAME"));
 
   for (const auto &process : process_table_) {
-    Serial.print(process.pid);
+    Serial.print(process.pid_);
     Serial.print(F("\t"));
-    Serial.print(process.state);
+    Serial.print(process.state_);
     Serial.print(F("\t"));
     Serial.print(process.addr);
     Serial.print(F("\t"));
-    Serial.print(process.program_ctr);
+    Serial.print(process.program_ctr_);
     Serial.print(F("\t"));
-    Serial.print(process.file_ptr);
+    Serial.print(process.file_ptr_);
     Serial.print(F("\t"));
-    Serial.print(process.loop_addr);
+    Serial.print(process.loop_addr_);
     Serial.print(F("\t"));
-    Serial.println(process.name);
+    Serial.println(process.name_);
   }
+  return 0;
 }
