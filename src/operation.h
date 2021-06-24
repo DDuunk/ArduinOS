@@ -4,8 +4,6 @@
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "processing.h"
-#include "fat.h"
-#include "stack.h"
 #include "instruction_set.h"
 #include "utils.h"
 
@@ -19,57 +17,75 @@ class Operation {
    * @brief Stack operations
    * @param process
    * @param data_type
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void StackOp(Processing::Process* process, uint8_t data_type);
+  static int StackOp(Processing::Process* process, uint8_t data_type);
 
   /**
    * @brief Unary operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void UnaryOp(Processing::Process* process, uint8_t operation);
+  static int UnaryOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief Math operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void BinaryOp(Processing::Process* process, uint8_t operation);
+  static int BinaryOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief Time operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void TimeOp(Processing::Process* process, uint8_t operation);
+  static int TimeOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief Hardware Input/Output operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void IoOp(Processing::Process* process, uint8_t operation);
+  static int IoOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief Conditional operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void ConditionalOp(Processing::Process* process, uint8_t operation);
+  static int ConditionalOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief File manipulation operations
    * @param process
    * @param operation
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void FileOp(Processing::Process* process, uint8_t operation);
+  static int FileOp(Processing::Process* process, uint8_t operation);
 
   /**
    * @brief Serial print operations
    * @param process
    * @param new_line
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  static void PrintOp(Processing::Process* process, bool new_line = false);
+  static int PrintOp(Processing::Process* process, bool new_line = false);
+
+//  static void StackOp(Processing::Process* process, uint8_t data_type);
+//  static void UnaryOp(Processing::Process* process, uint8_t operation);
+//  static void BinaryOp(Processing::Process* process, uint8_t operation);
+//  static void TimeOp(Processing::Process* process, uint8_t operation);
+//  static void IoOp(Processing::Process* process, uint8_t operation);
+//  static void ConditionalOp(Processing::Process* process, uint8_t operation);
+//  static void FileOp(Processing::Process* process, uint8_t operation);
+//  static void PrintOp(Processing::Process* process, bool new_line = false);
+
 };
 
 #endif //OPERATION_H_
