@@ -11,14 +11,12 @@
 
 class Fat {
 
- public:
-
  private:
-  struct FatEntry {
-    char name[12]; // Name of file
-    int addr; // Data address
-    int size; // Size of data
-  };
+  typedef PROGMEM struct {
+    char name_[12]; // Name of file
+    uint16_t addr_; // Data address
+    uint16_t size_; // Size of data
+  } FatEntry;
 
   static EERef num_of_files_;
 
@@ -33,7 +31,7 @@ class Fat {
    * @param data
    * @return true if succesful, false if not
    */
-  static bool Write(char* name, int size, char* data);
+  static bool Write(char* name, uint16_t size, char* data);
 
   /**
    * @brief Write file's data to Fat
@@ -42,7 +40,7 @@ class Fat {
    * @param data
    * @return true if successful, false if not
    */
-  static bool WriteData(int addr, int size, char* data);
+  static bool WriteData(uint16_t addr, uint16_t size, char* data);
 
   /**
    * @brief Read a file
@@ -76,14 +74,14 @@ class Fat {
    * @param index
    * @return start address
    */
-  static int GetStartAddr(int index);
+  static int GetStartAddr(uint8_t index);
 
   /**
    * @brief Get available address for data storage
    * @param size
    * @return EEPROM address
    */
-  static int GetAvailableAddr(int size);
+  static int GetAvailableAddr(uint16_t size);
 
   /**
    * @brief List all files in Fat
@@ -106,14 +104,14 @@ class Fat {
    * @param pos
    * @param file
    */
-  static int WriteFatEntry(int pos, FatEntry file);
+  static int WriteFatEntry(uint8_t pos, FatEntry file);
 
   /**
    * @brief Read Fat entry from EEPROM
    * @param pos
    * @return Fat entry
    */
-  static FatEntry ReadFatEntry(int pos);
+  static FatEntry ReadFatEntry(uint8_t pos);
 
   /**
    * @brief Get available address for entry storage
