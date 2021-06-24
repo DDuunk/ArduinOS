@@ -16,34 +16,24 @@ class Cli {
  private:
   char buffer_[COMMAND_MAX_SIZE] = { 0 };
 
-  typedef int (Cli::*Function)(char** args);
-
-  struct CommandType {
-    char name[BUFFER_SIZE];
-    Cli::Function func;
-    int args_length;
-  };
+  typedef PROGMEM struct {
+    char name_[BUFFER_SIZE];
+    int (*func)(char** args);
+    uint16_t args_length_;
+  } CommandType;
 
   // Initialize all available commands
-  CommandType command_[13] = {
-      { "help",      &Cli::Help,       0 }, // Show command usage
-      { "store",     &Cli::Store,      2 }, // Store a file in filesystem
-      { "retrieve",  &Cli::Retrieve,   1 }, // Get a file from filesystem
-      { "erase",     &Cli::Erase,      1 }, // Delete a file
-      { "files",     &Cli::Files,      0 }, // Get all Files from filesystem
-      { "freespace", &Cli::Freespace,  0 }, // Get available storage capacity
-      { "run",       &Cli::Run,        1 }, // Start a program
-      { "list",      &Cli::List,       0 }, // Get a List of all running processes
-      { "suspend",   &Cli::Suspend,    1 }, // Pause a process
-      { "resume",    &Cli::Resume,     1 }, // Start a process
-      { "kill",      &Cli::Kill,       1 }, // Stop a process
-      { "eeprom",    &Cli::Eeprom,     0 }, // TESTING - Print EEPROM
-      { "clear",     &Cli::Clear,      0 } // TESTING - Clear EEPROM
-  };
+  static CommandType command_[];
 
  public:
   Cli();
   ~Cli();
+
+  /**
+   * @brief Initializes Cli non-construction properties
+   * @param test_mode - Whether or not to initialize testing mode
+   */
+  void Start(bool test_mode = false);
 
   /**
    * @brief Contains the Cli loop,
@@ -69,85 +59,100 @@ class Cli {
   /**
    * @brief Parse commando input
    * @param args - args buffer
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
   int HandleCmd(int argc, char *argv[]);
 
   /**
    * @brief Print help information
+   * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Help(char **args);
+  static int Help(char **args);
 
   /**
    * @brief Store a file on the filesystem
    * @param args - file name, size & Data
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Store(char **args);
+  static int Store(char **args);
 
   /**
    * @brief Retrieve a file from the filesystem
    * @param args - file name
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Retrieve(char **args);
+  static int Retrieve(char **args);
 
   /**
    * @brief Erase a file from the filesystem
    * @param args - file name
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Erase(char **args);
+  static int Erase(char **args);
 
   /**
    * @brief Printing a list of files
    * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Files(char **args);
+  static int Files(char **args);
 
   /**
    * @brief Printing available space on the filesystem
    * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Freespace(char **args);
+  static int Freespace(char **args);
 
   /**
    * @brief Start a program
    * @param args - file name
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Run(char **args);
+  static int Run(char **args);
 
   /**
    * @brief Print a list of all processes
    * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int List(char **args);
+  static int List(char **args);
 
   /**
    * @brief Suspend a running process
    * @param args - process id
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Suspend(char **args);
+  static int Suspend(char **args);
 
   /**
    * @brief Resume a process
    * @param args - process id
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Resume(char **args);
+  static int Resume(char **args);
 
   /**
    * @brief Kill a process
    * @param args - process id
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Kill(char **args);
+  static int Kill(char **args);
 
   /**
    * @brief TESTING - Print EEPROM
    * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Eeprom(char **args);
+  static int Eeprom(char **args);
 
   /**
    * @brief TESTING - Clear EEPROM
    * @param args - none
+   * @return 0 (error-code: OK) || -1 (error-code: FAILED)
    */
-  int Clear(char **args);
+  static int Clear(char **args);
 
 };
 

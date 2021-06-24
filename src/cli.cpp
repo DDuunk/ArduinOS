@@ -1,23 +1,48 @@
 #include "cli.h"
 #include "../test/program_test.h"
 
-Fat* fat;
-//Processing* processing;
+static Fat fat;
+static Processing processing;
+
+Cli::CommandType Cli::command_[] = {
+    { "help",      &Cli::Help,       0 }, // Show command usage
+    { "store",     &Cli::Store,      2 }, // Store a file in filesystem
+    { "retrieve",  &Cli::Retrieve,   1 }, // Get a file from filesystem
+    { "erase",     &Cli::Erase,      1 }, // Delete a file
+    { "files",     &Cli::Files,      0 }, // Get all Files from filesystem
+    { "freespace", &Cli::Freespace,  0 }, // Get available storage capacity
+    { "run",       &Cli::Run,        1 }, // Start a program
+    { "list",      &Cli::List,       0 }, // Get a List of all running processes
+    { "suspend",   &Cli::Suspend,    1 }, // Pause a process
+    { "resume",    &Cli::Resume,     1 }, // Start a process
+    { "kill",      &Cli::Kill,       1 }, // Stop a process
+    { "eeprom",    &Cli::Eeprom,     0 }, // TESTING - Print EEPROM
+    { "clear",     &Cli::Clear,      0 } // TESTING - Clear EEPROM
+};
 
 Cli::Cli() {
   Reset();
-  fat = new Fat();
-//  processing = new Processing();
+}
 
-//  fat->Write("hello", sizeof(test_blink), (char*)test_blink);
+Cli::~Cli() {}
+
+void Cli::Start(bool test_mode) {
   Serial.println(F("*****************************"));
   Serial.println(F("***   ArduinOS 1.0 Ready  ***"));
   Serial.println(F("*****************************"));
 
-//  processing->StartProcess("hello");
+  if (test_mode) {
+    fat.Write((char *) "hello", sizeof(test_hello), (char *) test_hello);
+    fat.Write((char *) "vars", sizeof(test_vars), (char *) test_vars);
+    fat.Write((char *) "loop", sizeof(test_loop), (char *) test_loop);
+    fat.Write((char *) "if", sizeof(test_if), (char *) test_if);
+    fat.Write((char *) "while", sizeof(test_while), (char *) test_while);
+    fat.Write((char *) "blink", sizeof(test_blink), (char *) test_blink);
+    fat.Write((char *) "read", sizeof(test_read), (char *) test_read);
+    fat.Write((char *) "write", sizeof(test_write), (char *) test_write);
+    fat.Write((char *) "fork", sizeof(test_fork), (char *) test_fork);
+  }
 }
-
-Cli::~Cli() {}
 
 void Cli::Service() {
   if (!ProcessSerial()) {
@@ -26,14 +51,12 @@ void Cli::Service() {
 }
 
 void Cli::ServiceProcess() {
-//  processing->Service();
+  processing.Service();
 }
 
 bool Cli::ProcessSerial() {
-  char c;
-
   while (Serial.available() > 0) {
-    c = Serial.read();
+    char c = Serial.read();
 
     if (c != '\n') {
       // Account for backspaces
@@ -87,13 +110,13 @@ void Cli::Reset() {
 
 int Cli::HandleCmd(int argc, char *argv[]) {
   for (auto &i : command_) {
-    if (strcmp(argv[0], i.name) == 0) {
-      if (i.args_length != argc - 1) {
+    if (strcmp(argv[0], i.name_) == 0) {
+      if (i.args_length_ != argc - 1) {
         ThrowError((char*) "Fat", (char*) "Error: args length not matching");
         Help(nullptr);
         return -1;
       }
-      return (this->*(i.func))(argv + 1 /* Offset for the command itself */);
+      return (*(i.func))(argv + 1 /* Offset for the command itself */);
     }
   }
 
@@ -152,7 +175,7 @@ int Cli::Files(char **args) {
 }
 
 int Cli::Freespace(char **args) {
-  int freespace = Fat::Freespace();
+  int8_t freespace = Fat::Freespace();
 
   if (freespace == 0 || freespace == -1) {
     ThrowError((char*) "Cli", (char*) "Error: No space available on filesystem");
@@ -166,47 +189,37 @@ int Cli::Freespace(char **args) {
 }
 
 int Cli::Run(char **args) {
-  Serial.println("run");
-//  processing->StartProcess(args[0]);
-//  processing->ListProcesses();
-  return 38;
+  processing.CreateProcess(args[0]);
+  return 0;
 }
 
 int Cli::List(char **args) {
-  Serial.println("list");
-//  processing->ListProcesses();
-  return 38;
+  processing.ListProcesses();
+  return 0;
 }
 
 int Cli::Suspend(char **args) {
-  Serial.println("suspend");
-//  int pid = atoi(args[0]);
-//  processing->EditProcess(pid, processing->PAUSED);
-  return 38;
+  processing.EditProcess(atoi(args[0]), processing.PAUSED);
+  return 0;
 }
 
 int Cli::Resume(char **args) {
-  Serial.println("resume");
-//  int pid = atoi(args[0]);
-//  processing->EditProcess(pid, processing->RUNNING);
-  return 38;
+  processing.EditProcess(atoi(args[0]), processing.RUNNING);
+  return 0;
 }
 
 int Cli::Kill(char **args) {
-  Serial.println("kill");
-//  int pid = atoi(args[0]);
-//  processing->EditProcess(pid, processing->TERMINATED);
-  return 38;
+  processing.EditProcess(atoi(args[0]), processing.TERMINATED);
+  return 0;
 }
 
 int Cli::Eeprom(char **args) {
-  Serial.println("eeprom");
-//  Fat::PrintEeprom();
-  return 38;
+  Fat::PrintEeprom();
+  return 0;
 }
 
 int Cli::Clear(char **args) {
-  Serial.println("clear");
+  Serial.println(F("clear"));
 //  Fat::ClearEeprom();
-  return 38;
+  return 0;
 }
