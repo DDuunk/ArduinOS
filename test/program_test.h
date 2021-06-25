@@ -14,15 +14,15 @@ uint8_t test_vars[] = {
     STRING,'t','e','s','t',0,SET,'s',
     CHAR,'a',SET,'c',
     INT,1,7,SET,'i', // 1 * 256 + 7 = 263
-    FLOAT,66,246,230,102,SET,'f', //123.45
+//    FLOAT,66,246,230,102,SET,'f', //123.45
     STRING,'p','a','s','s','e','d',0,SET,'s',
     GET,'c',INCREMENT,SET,'c',
     GET,'i',DECREMENT,SET,'i',
-    GET,'f',INCREMENT,SET,'f',
+//    GET,'f',INCREMENT,SET,'f',
     GET,'s',PRINTLN,
     GET,'c',PRINTLN,
     GET,'i',PRINTLN,
-    GET,'f',PRINTLN,
+//    GET,'f',PRINTLN,
     STOP
 };
 
@@ -102,17 +102,17 @@ uint8_t test_write[] = {
     GET,'s',
     INT,0,20,
     OPEN,
-    STRING,'t','e','x','t','\n',0,WRITE,
+//    STRING,'t','e','x','t','\n',0,WRITE,
     CHAR,'a',WRITE,
     INT,98,99,WRITE, // 25187
-    FLOAT,61,204,204,205,WRITE, // 0.1
+//    FLOAT,61,204,204,205,WRITE, // 0.1
     GET,'s',
     INT,0,20,
     OPEN,
-    READSTRING,PRINTLN,
+//    READSTRING,PRINTLN,
     READCHAR,PRINTLN,
     READINT,PRINTLN,
-    READFLOAT,PRINTLN,
+//    READFLOAT,PRINTLN,
     STOP
 };
 

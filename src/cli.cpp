@@ -32,15 +32,18 @@ void Cli::Start(bool test_mode) {
   Serial.println(F("*****************************"));
 
   if (test_mode) {
-    fat.Write((char *) "hello", sizeof(test_hello), (char *) test_hello);
-    fat.Write((char *) "vars", sizeof(test_vars), (char *) test_vars);
-    fat.Write((char *) "loop", sizeof(test_loop), (char *) test_loop);
-    fat.Write((char *) "if", sizeof(test_if), (char *) test_if);
-    fat.Write((char *) "while", sizeof(test_while), (char *) test_while);
-    fat.Write((char *) "blink", sizeof(test_blink), (char *) test_blink);
-    fat.Write((char *) "read", sizeof(test_read), (char *) test_read);
-    fat.Write((char *) "write", sizeof(test_write), (char *) test_write);
-    fat.Write((char *) "fork", sizeof(test_fork), (char *) test_fork);
+//    fat.Write((char *) "hello", sizeof(test_hello), (char *) test_hello);
+//    fat.Write((char *) "vars", sizeof(test_vars), (char *) test_vars);
+    fat.Write((char *) "loop1", sizeof(test_loop), (char *) test_loop);
+    fat.Write((char *) "loop2", sizeof(test_loop), (char *) test_loop);
+//    fat.Write((char *) "if", sizeof(test_if), (char *) test_if);
+//    fat.Write((char *) "while", sizeof(test_while), (char *) test_while);
+//    fat.Write((char *) "blink", sizeof(test_blink), (char *) test_blink);
+//    fat.Write((char *) "read", sizeof(test_read), (char *) test_read);
+//    fat.Write((char *) "write", sizeof(test_write), (char *) test_write);
+//    fat.Write((char *) "fork", sizeof(test_fork), (char *) test_fork);
+    processing.CreateProcess((char *) "loop1");
+    processing.CreateProcess((char *) "loop2");
   }
 }
 
