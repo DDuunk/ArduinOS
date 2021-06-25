@@ -49,5 +49,5 @@ A command line interface written for Arduino
         - Works but exceeds memory
       - [ ] READSTRING
         - All character are valid, but can't figure out a good method to get the length of the string.
-          Dynamically sizing the array causes in faulthy data.
+          Dynamically sizing the array causes faulthy data.
     - [ ] Forking
