@@ -33,8 +33,6 @@ int Memory::StoreEntry(uint8_t name, uint8_t pid, Stack* stack) {
 
   memory_table_[num_of_vars_] = memory_entry;
 
-  PrintMemoryTable();
-
   int i = memory_table_[num_of_vars_].size_ - 1;
   do {
     memory_[memory_table_[num_of_vars_].addr_ + i] = stack->PopByte();
@@ -47,7 +45,6 @@ int Memory::StoreEntry(uint8_t name, uint8_t pid, Stack* stack) {
 //    memory_[memory_table_[num_of_vars_].addr + i] = stack->PopByte(); // Set data
 //  }
 
-  Serial.println("Peek");
   ++num_of_vars_;
   return 0;
 }

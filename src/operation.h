@@ -77,15 +77,6 @@ class Operation {
    */
   static int PrintOp(Processing::Process* process, bool new_line = false);
 
-//  static void StackOp(Processing::Process* process, uint8_t data_type);
-//  static void UnaryOp(Processing::Process* process, uint8_t operation);
-//  static void BinaryOp(Processing::Process* process, uint8_t operation);
-//  static void TimeOp(Processing::Process* process, uint8_t operation);
-//  static void IoOp(Processing::Process* process, uint8_t operation);
-//  static void ConditionalOp(Processing::Process* process, uint8_t operation);
-//  static void FileOp(Processing::Process* process, uint8_t operation);
-//  static void PrintOp(Processing::Process* process, bool new_line = false);
-
 };
 
 #endif //OPERATION_H_

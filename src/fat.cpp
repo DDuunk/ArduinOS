@@ -38,7 +38,7 @@ bool Fat::Write(char *name, uint16_t size, char *data) {
   }
 
   FatEntry file = (FatEntry) {"", (uint16_t) data_addr, size};
-  strcpy_P(file.name_, name);
+  strcpy(file.name_, name);
 
   int8_t file_addr = GetAvailableFileAddr();
   if (file_addr == -1) {
