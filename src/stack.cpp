@@ -78,7 +78,6 @@ void Stack::PushString(char *elem) {
 
 char* Stack::PopString()  {
   PopByte();
-
   uint8_t length = PopByte();
   pos_ -= length;
   return (char*) (stack_ + pos_);

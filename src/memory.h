@@ -7,7 +7,7 @@
 #include "utils.h"
 
 #define MEMORY_COUNT 25
-#define MEMORY_SIZE 256
+#define MEMORY_SIZE 128
 
 class Memory {
 
@@ -89,15 +89,6 @@ class Memory {
    * @return 0 (error-code: OK)
    */
   int PrintMemoryTable();
-
-//  bool StoreEntry(uint8_t name, int pid, Stack::stack_t* stack);
-//  int GetEntry(uint8_t name, int pid, Stack::stack_t* stack);
-//  int FindEntry(uint8_t name, int pid);
-//  void DeleteEntry(int index);
-//  void ClearEntries(int pid);
-//  int GetStartAddr(int size);
-//  static int GetTypeSize(char type, Stack::stack_t* stack);
-//  void PrintMemoryTable();
 
  private:
   void Reset();

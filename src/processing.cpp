@@ -76,13 +76,7 @@ int Processing::CreateProcess(char* name) {
   process.file_ptr_ = 0;
   process.program_ctr_ = Fat::GetStartAddr(file_index);
   process.loop_addr_ = 0;
-  strcpy_P(process.name_, name);
-
-//  Serial.println(process.pid);
-//  Serial.println(process.state);
-//  Serial.println(process.file_ptr);
-//  Serial.println(process.program_ctr);
-//  Serial.println(process.name);
+  strcpy(process.name_, name);
 
   process_table_[pid] = process;
   num_of_processes_++;
@@ -234,7 +228,7 @@ int Processing::Execute(uint8_t index) {
     case READCHAR:
     case READFLOAT:
     case READSTRING:
-//      Operation::FileOp(process_table_ + index, next_instruction);
+      Operation::FileOp(process_table_ + index, next_instruction);
       break;
     case FORK:
       // TODO: Pop type STRING, push type INT, start new process; push process-id
@@ -254,167 +248,6 @@ int Processing::Execute(uint8_t index) {
 
   return -1;
 }
-
-//bool Processing::Execute(int index) {
-//  uint8_t next_instruction = EEPROM[process_table_[index].program_ctr++];
-//
-//  Serial.print("NEXT ");
-//  Serial.println(next_instruction);
-//
-//  switch (next_instruction) {
-//    case CHAR:
-//    case INT:
-//    case STRING:
-//    case FLOAT:
-//      Operation::StackOp(process_table_ + index, next_instruction);
-//      break;
-//    case SET:
-//      memory->StoreEntry(
-//          EEPROM[process_table_[index].program_ctr++],
-//          process_table_[index].pid,
-//          &(process_table_[index].stack)
-//      );
-//      break;
-//    case GET:
-//      memory->GetEntry(
-//          EEPROM[process_table_[index].program_ctr++],
-//          process_table_[index].pid,
-//          &(process_table_[index].stack)
-//      );
-//      break;
-//    case INCREMENT:
-//    case DECREMENT:
-//    case UNARYMINUS:
-//    case ABS:
-//    case SQ:
-//    case SQRT:
-//    case ANALOGREAD:
-//    case DIGITALREAD:
-//    case LOGICALNOT:
-//    case BITWISENOT:
-//    case TOCHAR:
-//    case TOINT:
-//    case TOFLOAT:
-//    case ROUND:
-//    case FLOOR:
-//    case CEIL:
-//      Operation::UnaryOp(process_table_ + index, next_instruction);
-//      break;
-//    case PLUS:
-//    case MINUS:
-//    case TIMES:
-//    case DIVIDEDBY:
-//    case MODULUS:
-//    case EQUALS:
-//    case NOTEQUALS:
-//    case LESSTHAN:
-//    case LESSTHANOREQUALS:
-//    case GREATERTHAN:
-//    case GREATERTHANOREQUALS:
-//    case MIN:
-//    case MAX:
-//    case POW:
-//    case LOGICALAND:
-//    case LOGICALOR:
-//    case LOGICALXOR:
-//    case BITWISEAND:
-//    case BITWISEOR:
-//    case BITWISEXOR:
-//      Operation::BinaryOp(process_table_ + index, next_instruction);
-//      break;
-//    case IF:
-//    case ELSE:
-//    case ENDIF:
-//    case LOOP:
-//    case ENDLOOP:
-//    case WHILE:
-//    case ENDWHILE:
-//      Operation::ConditionalOp(process_table_ + index, next_instruction);
-//      break;
-//    case DELAY:
-//    case DELAYUNTIL:
-//    case MILLIS:
-//      Operation::TimeOp(process_table_ + index, next_instruction);
-//      break;
-//    case CONSTRAIN:
-//    case MAP:
-//    case PINMODE:
-//    case DIGITALWRITE:
-//    case ANALOGWRITE:
-//      Operation::IoOp(process_table_ + index, next_instruction);
-//      break;
-//    case PRINT:
-//      Operation::PrintOp(process_table_ + index);
-//      break;
-//    case PRINTLN:
-//      Operation::PrintOp(process_table_ + index, true);
-//      break;
-//    case OPEN:
-//    case CLOSE:
-//    case WRITE:
-//    case READINT:
-//    case READCHAR:
-//    case READFLOAT:
-//    case READSTRING:
-////      Operation::FileOp(process_table_ + index, next_instruction);
-//      break;
-//    case FORK:
-//      // TODO: Pop type STRING, push type INT, start new process; push process-id
-//      break;
-//    case WAITUNTILDONE:
-//      // TODO: Pop type getal, push type getal, PC-- en push x als process x niet TERMINATED is, anders niets
-//      break;
-//    case STOP:
-//      SetProcessState(process_table_[index].pid, TERMINATED);
-//      return true; // Terminate process
-//    default:
-//      ThrowError((char*) "Processing", (char*) "unknown instruction: ", false);
-//      Serial.println(next_instruction);
-//      SetProcessState(process_table_[index].pid, TERMINATED);
-//      return true; // Terminate process
-//  }
-//
-//  return false;
-//}
-
-//bool Processing::StartProcess(char* name) {
-//  if (num_of_processes_ >= PROCESS_MAX_AMOUNT) {
-//    ThrowError((char*) "Processing", (char*) "Processing table is full");
-//    return false;
-//  }
-//
-//  int file_index = Fat::FindFile(name);
-//  if (file_index == -1) {
-//    ThrowError((char*) "Processing", (char*) "File does not exist");
-//    return false;
-//  }
-//
-//  int pid;
-//  for (int i = 0; i < PROCESS_MAX_AMOUNT; i++) {
-//    if (process_table_[i].state == '\0') {
-//      pid = i;
-//      break;
-//    }
-//  }
-//
-//  Process process;
-//  process.pid = pid;
-//  process.state = RUNNING;
-////  process.stack = new Stack();
-//  process.stack = {};
-//  process.file_ptr = 0;
-//  process.program_ctr = Fat::GetStartAddr(file_index);
-//  strcpy(process.name, name);
-//
-//  process_table_[pid] = process;
-//  num_of_processes_++;
-//
-//  Serial.print(F("[Processing] Started: "));
-//  Serial.println(process.name);
-////  Serial.println(name);
-//  ListProcesses();
-//  return true;
-//}
 
 int Processing::FindProcess(uint8_t id) {
   for (int i = 0; i < PROCESS_MAX_AMOUNT; i++) {
